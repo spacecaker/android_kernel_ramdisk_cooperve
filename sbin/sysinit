@@ -1,0 +1,14 @@
+#!/system/bin/sh
+
+BUSYBOX=/sbin/busybox
+INITD=/system/etc/init.d
+
+if $BUSYBOX ! test $INITD
+then
+$BUSYBOX mkdir $INITD
+$BUSYBOX chmod -R 777 $INITD
+else
+$BUSYBOX chmod -R 777 $INITD
+fi
+
+/system/bin/logwrapper /sbin/busybox run-parts /system/etc/init.d
