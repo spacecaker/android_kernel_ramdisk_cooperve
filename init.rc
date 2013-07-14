@@ -719,12 +719,6 @@ group graphics
 disabled
 oneshot
 
-service samsungani /system/bin/samsungani
-    user graphics
-    group graphics
-    disabled
-    oneshot
-
 service dbus /system/bin/dbus-daemon --system --nofork
     socket dbus stream 660 bluetooth bluetooth
     user bluetooth
