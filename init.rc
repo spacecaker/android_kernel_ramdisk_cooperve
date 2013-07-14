@@ -714,10 +714,10 @@ service media /system/bin/mediaserver
     ioprio rt 4
 
 service bootanim /system/bin/bootanimation
-user graphics
-group graphics
-disabled
-oneshot
+    user graphics
+    group graphics
+    disabled
+    oneshot
 
 service dbus /system/bin/dbus-daemon --system --nofork
     socket dbus stream 660 bluetooth bluetooth
