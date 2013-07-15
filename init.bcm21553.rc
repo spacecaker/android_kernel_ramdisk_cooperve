@@ -220,7 +220,7 @@ service map /system/bin/sdptool add --channel=16 MAS
     oneshot
 
 service hciattach /system/bin/logwrapper /system/bin/brcm_patchram_plus --enable_hci \
-    --baudrate 3000000 --patchram /system/bin/BCM4330B1_002.001.003.0634.0652.hcd /dev/ttyS1
+    --baudrate 3000000 --patchram /system/bin/BCM4330B1_002.001.003.0609.0614.hcd /dev/ttyS1
     user bluetooth
     group bluetooth net_bt_admin
     disabled
