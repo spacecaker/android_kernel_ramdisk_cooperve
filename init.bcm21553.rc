@@ -24,6 +24,7 @@ on post-fs
 
 on boot
 
+# Flashlight
     chown system system /sys/class/backlight/aat1401-backlight/brightness
     chown system system /sys/class/backlight/pwm-keypad-backlight.0/brightness
 
@@ -85,14 +86,6 @@ on boot
 #permisssion for cacheops
 	chmod 0666 /dev/cache-ops 
 
-#Flashlight
-    chown system system /sys/class/leds/lcd-backlight/brightness
-    chown system system /sys/class/leds/button-backlight/brightness
-    chown system camera /sys/class/leds/flashlight/brightness
-    chmod 0660 /sys/class/leds/lcd-backlight/brightness
-    chmod 0660 /sys/class/leds/button-backlight/brightness
-    chmod 0660 /sys/class/leds/flashlight/brightness
-
 #DHCP Service init
     setprop wifi.interface "eth0"
 
@@ -117,17 +110,24 @@ on boot
     chmod 0664 /sys/class/gpio/gpio21/value
     
 # Bluetooth
+    chown root bluetooth /dev/ttyS1
+    chmod 0660 /dev/ttyS1
+    chown root bluetooth /sys/class/rfkill/rfkill0
+    chown root bluetooth /sys/class/rfkill/rfkill0/state
+    chown root bluetooth /sys/class/rfkill/rfkill0/claim
+    chown root bluetooth /sys/class/rfkill/rfkill0/soft
+    chmod 0664 /sys/class/rfkill/rfkill0/state
+    chmod 0664 /sys/class/rfkill/rfkill0/claim
+    chmod 0664 /sys/class/rfkill/rfkill0/soft
+    chown root bluetooth /sys/class/sound/controlC0/FMDirectPlay
 
-    chown bluetooth bluetooth /data/misc/bluetooth
-    chown bluetooth bluetooth ro.bt.bdaddr_path
-    chown bluetooth bluetooth /dev/ttyS1
-    chmod 0600 /dev/ttyS1
-    chmod 0660 /sys/class/rfkill/rfkill0/state
-    chown bluetooth bluetooth /sys/class/rfkill/rfkill0/state
-    chown bluetooth bluetooth /sys/class/rfkill/rfkill0/type
+    setprop service.brcm.bt.pbap_mode btld
 
-    setprop ro.bt.bdaddr_path "/data/misc/bluetooth/.nvmac_bt.info"\
+    chown system bluetooth /data/local.prop
 
+    setprop ro.bt.bdaddr_path "/data/misc/bluetooth/.nvmac_bt.info"
+    chmod 0660 ro.bt.bdaddr_path
+ 
 #for GPS files
 
     chown gps system /dev/ttyS2
@@ -178,25 +178,59 @@ service runSysCmd /system/bin/runSysCmd /data/misc/utils/setusbmode.txt 70
     oneshot
 
 # Bluetooth
-service hciattach /system/bin/hciattach /system/bin/brcm_patchram_plus --enable_hci \
---baudrate 3000000 --patchram /system/bin/BCM4330B1_002.001.003.0609.0614.hcd /dev/ttyS1
+service btld /system/bin/logwrapper /system/bin/btld -hb 3000000 -hp /dev/ttyS1 -lpm 1 -nice -7
+    user root
+    group bluetooth net_bt_admin
+    disabled
+    oneshot
+
+service bluetoothd /system/bin/logwrapper /system/bin/bluetoothd -d -n
+    socket bluetooth stream 660 bluetooth bluetooth
+    socket dbus_bluetooth stream 660 bluetooth bluetooth
+    group bluetooth net_bt_admin misc
+    disabled
+
+service hfag /system/bin/sdptool add --channel=10 HFAG
     user bluetooth
     group bluetooth net_bt_admin
     disabled
     oneshot
 
+service hsag /system/bin/sdptool add --channel=11 HSAG
+    user bluetooth
+    group bluetooth net_bt_admin
+    disabled
+    oneshot
+
+service opush /system/bin/sdptool add --channel=12 OPUSH
+    user bluetooth
+    group bluetooth net_bt_admin
+    disabled
+    oneshot
+
+service pbap /system/bin/sdptool add --channel=19 PBAP
+    user bluetooth
+    group bluetooth net_bt_admin
+    disabled
+    oneshot
+
+service map /system/bin/sdptool add --channel=16 MAS
+    user bluetooth
+    group bluetooth net_bt_admin
+    disabled
+    oneshot
+
+
+service hciattach /system/bin/logwrapper /system/bin/brcm_patchram_plus --bd_addr 4C0B3A2DF4B6 --enable_hci --tosleep 50000 --baudrate 3000000 --use_baudrate_for_download --i2s=1,1,0,1 --no2bytes --patchram /system/bin/BCM4330B1_002.001.003.0634.0652.hcd /dev/ttyS1
+    user bluetooth
+    group bluetooth net_bt_admin
+    disabled
+    oneshot
+
+# GPS
 service gpsd /system/bin/glgps -c /system/etc/gps/glconfig4751.xml
     user gps
     group system sdcard_rw inet
-
-#STOPSHIP: Remove logwrapper and -d option before production
-service bluetoothd /system/bin/logwrapper /system/bin/bluetoothd -d -n
-    socket bluetooth stream 660 bluetooth bluetooth
-    socket dbus_bluetooth stream 660 bluetooth bluetooth
-    # init.rc does not yet support applying capabilities, so run as root and
-    # let bluetoothd drop uid to bluetooth with the right linux capabilities
-    group bluetooth net_bt_admin misc
-    disabled
 
 # DHCP
 on property:init.svc.wpa_supplicant=stopped
